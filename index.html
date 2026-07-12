@@ -1,0 +1,999 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DreamCOMPASS Lite — 魂の財務諸表・体験版</title>
+<style>
+  :root {
+    --bg1: #0f1226;
+    --bg2: #1c1f3a;
+    --card: #232748;
+    --card2: #2b3057;
+    --gold: #f5c76a;
+    --gold-dim: #c9a24f;
+    --text: #e8e9f3;
+    --sub: #a0a3c0;
+    --line: #3a3f6e;
+    --good: #6ee7a8;
+    --warn: #f79c9c;
+    --accent: #8ea2ff;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: "Hiragino Kaku Gothic ProN", "Yu Gothic UI", "Meiryo", sans-serif;
+    background: linear-gradient(160deg, var(--bg1) 0%, var(--bg2) 60%, #251b3f 100%);
+    color: var(--text);
+    min-height: 100vh;
+    line-height: 1.7;
+  }
+  .wrap { max-width: 640px; margin: 0 auto; padding: 24px 16px 60px; }
+  header { text-align: center; padding: 18px 0 6px; }
+  header .logo { font-size: 34px; }
+  header h1 { font-size: 22px; letter-spacing: 2px; color: var(--gold); margin-top: 4px; }
+  header .tagline { font-size: 13px; color: var(--sub); margin-top: 6px; }
+  .privacy {
+    margin: 14px auto 0; display: inline-block;
+    font-size: 12px; color: var(--good);
+    border: 1px solid rgba(110,231,168,.4); border-radius: 999px;
+    padding: 4px 14px; background: rgba(110,231,168,.08);
+  }
+  .card {
+    background: var(--card); border: 1px solid var(--line);
+    border-radius: 14px; padding: 20px 18px; margin-top: 18px;
+  }
+  .card h2 {
+    font-size: 15px; color: var(--gold); letter-spacing: 1px;
+    border-bottom: 1px solid var(--line); padding-bottom: 8px; margin-bottom: 14px;
+  }
+  .card h2 .opt { font-size: 11px; color: var(--sub); font-weight: normal; margin-left: 8px; }
+  label { display: block; font-size: 13px; color: var(--sub); margin: 10px 0 4px; }
+  input[type="text"], input[type="date"], input[type="number"], select, textarea {
+    width: 100%; padding: 10px 12px; border-radius: 8px;
+    border: 1px solid var(--line); background: var(--bg1); color: var(--text);
+    font-size: 15px; font-family: inherit;
+  }
+  textarea { min-height: 84px; resize: vertical; }
+  input:focus, select:focus, textarea:focus { outline: 2px solid var(--accent); border-color: transparent; }
+  .row { display: flex; gap: 10px; }
+  .row > div { flex: 1; }
+  .strokes { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
+  .strokes .schar {
+    display: flex; flex-direction: column; align-items: center;
+    background: var(--bg1); border: 1px solid var(--line); border-radius: 8px; padding: 6px 8px;
+  }
+  .strokes .schar span { font-size: 16px; }
+  .strokes .schar input { width: 52px; text-align: center; padding: 4px; font-size: 14px; border: 1px solid var(--line); }
+  .hint { font-size: 11px; color: var(--sub); margin-top: 6px; }
+  .btn-main {
+    width: 100%; margin-top: 24px; padding: 16px;
+    background: linear-gradient(135deg, var(--gold) 0%, #e09a3e 100%);
+    color: #1c1503; font-size: 17px; font-weight: bold; letter-spacing: 2px;
+    border: none; border-radius: 12px; cursor: pointer;
+    box-shadow: 0 4px 18px rgba(245,199,106,.25);
+  }
+  .btn-main:active { transform: scale(.98); }
+  .btn-sub {
+    display: inline-block; padding: 10px 18px; margin: 6px 4px 0 0;
+    background: var(--card2); color: var(--text); font-size: 13px;
+    border: 1px solid var(--line); border-radius: 8px; cursor: pointer; text-decoration: none;
+  }
+  .btn-x { background: #000; border-color: #444; color: #fff; }
+  /* 結果 */
+  #result { display: none; }
+  .grade-box { text-align: center; padding: 26px 0 10px; }
+  .grade-badge {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 130px; height: 130px; border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, #fff3d6, var(--gold) 55%, #a87b23);
+    color: #241a02; font-size: 46px; font-weight: 900;
+    box-shadow: 0 0 40px rgba(245,199,106,.45);
+    animation: pop .6s cubic-bezier(.2,1.6,.4,1);
+  }
+  @keyframes pop { 0% { transform: scale(0); } 100% { transform: scale(1); } }
+  .grade-label { margin-top: 10px; font-size: 16px; color: var(--gold); letter-spacing: 3px; }
+  .grade-desc { font-size: 13px; color: var(--sub); margin-top: 2px; }
+  .total-line { text-align: center; font-size: 13px; color: var(--sub); margin-top: 8px; }
+  .bar-row { margin: 12px 0; }
+  .bar-row .bar-head { display: flex; justify-content: space-between; font-size: 13px; }
+  .bar-row .bar-head b { color: var(--gold); }
+  .bar-bg { height: 10px; background: var(--bg1); border-radius: 999px; margin-top: 5px; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--accent), var(--gold)); width: 0; transition: width .9s ease; }
+  table.fin { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 6px; }
+  table.fin th, table.fin td { padding: 7px 8px; border-bottom: 1px solid var(--line); text-align: left; }
+  table.fin td.num { text-align: right; font-variant-numeric: tabular-nums; }
+  table.fin tr.total td { color: var(--gold); font-weight: bold; border-top: 2px solid var(--gold-dim); }
+  .detail-title { font-size: 14px; color: var(--gold); margin: 14px 0 4px; }
+  .detail-body { font-size: 13px; color: var(--text); }
+  .detail-body .kw { color: var(--accent); }
+  .detail-body .weak { color: var(--sub); }
+  .sym { display: inline-block; font-size: 12px; border: 1px solid var(--line); border-radius: 999px; padding: 2px 10px; margin: 3px 3px 0 0; background: var(--bg1); }
+  .sym.plus { color: var(--good); } .sym.minus { color: var(--warn); }
+  .cta {
+    margin-top: 18px; border: 1px solid var(--gold-dim); background: linear-gradient(160deg, #2b2547, #1f2a4d);
+  }
+  .cta p { font-size: 13px; }
+  .cta .big { font-size: 15px; color: var(--gold); font-weight: bold; margin-bottom: 6px; }
+  .cta ul { font-size: 13px; padding-left: 18px; margin: 8px 0; color: var(--text); }
+  footer { margin-top: 28px; font-size: 11px; color: var(--sub); text-align: center; line-height: 1.9; }
+  .err { color: var(--warn); font-size: 13px; margin-top: 10px; display: none; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="logo">🧭</div>
+    <h1>DreamCOMPASS Lite</h1>
+    <div class="tagline">7つの占いを「魂の財務諸表」に変える自己分析AIアプリ<br>— インストール不要の体験版（5軸診断） —</div>
+    <div class="privacy">🔒 入力データは一切送信されません（すべてこの画面内で計算）</div>
+  </header>
+
+  <!-- ============ 入力フォーム ============ -->
+  <div class="card">
+    <h2>① 基本情報</h2>
+    <label>生年月日（数秘術・身体バランスに使用）</label>
+    <input type="date" id="dob">
+    <div class="row">
+      <div>
+        <label>姓（例: 山田）</label>
+        <input type="text" id="familyName" maxlength="8" placeholder="山田">
+      </div>
+      <div>
+        <label>名（例: 太郎）</label>
+        <input type="text" id="givenName" maxlength="8" placeholder="太郎">
+      </div>
+    </div>
+    <div id="strokeEditor" style="display:none">
+      <label>画数の確認（自動推定値。正確な画数をご存知なら修正してください）</label>
+      <div class="strokes" id="strokeInputs"></div>
+      <div class="hint">※体験版の画数は簡易推定です。フル版では画数辞書による自動判定に対応予定。</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>② 身体バランス <span class="opt">任意</span></h2>
+    <div class="row">
+      <div>
+        <label>身長 (cm)</label>
+        <input type="number" id="height" min="80" max="250" placeholder="170">
+      </div>
+      <div>
+        <label>体重 (kg)</label>
+        <input type="number" id="weight" min="20" max="250" placeholder="60">
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>③ MBTI <span class="opt">任意</span></h2>
+    <label>あなたのMBTIタイプ</label>
+    <select id="mbti">
+      <option value="">わからない・未入力</option>
+    </select>
+    <div class="hint">※タイプが不明な場合は空欄でOK。無料の16タイプ診断を受けてから戻ってくるのもおすすめです。</div>
+  </div>
+
+  <div class="card">
+    <h2>④ 昨夜の夢 <span class="opt">任意</span></h2>
+    <label>覚えている夢の内容を自由に書いてください</label>
+    <textarea id="dream" placeholder="例: 空を飛んで海の上を渡る夢を見た。とても楽しい気分だった。"></textarea>
+  </div>
+
+  <button class="btn-main" id="analyzeBtn">🧭 魂の決算を実行する</button>
+  <div class="err" id="errMsg"></div>
+
+  <!-- ============ 結果 ============ -->
+  <div id="result">
+
+    <div class="grade-box">
+      <div class="grade-badge" id="gradeBadge">?</div>
+      <div class="grade-label" id="gradeLabel"></div>
+      <div class="grade-desc" id="gradeDesc"></div>
+      <div class="total-line" id="totalLine"></div>
+    </div>
+
+    <div class="card">
+      <h2>📊 5軸スコア</h2>
+      <div id="bars"></div>
+    </div>
+
+    <div class="card">
+      <h2>🏛 精神のバランスシート（B/S）</h2>
+      <div class="hint" style="margin:0 0 4px">生まれ持った資質と積み上げた資質＝あなたの「資産の部」（1点=1,000 SP換算）</div>
+      <table class="fin" id="bsTable"></table>
+    </div>
+
+    <div class="card">
+      <h2>📈 魂の損益計算書（P/L）</h2>
+      <div class="hint" style="margin:0 0 4px">昨夜の夢＝深層心理からの「当期の運勢フロー」</div>
+      <table class="fin" id="plTable"></table>
+    </div>
+
+    <div class="card">
+      <h2>🔍 各軸の詳細</h2>
+      <div id="details"></div>
+    </div>
+
+    <div class="card" style="text-align:center">
+      <h2 style="border:none;margin-bottom:4px">結果をシェアする</h2>
+      <a class="btn-sub btn-x" id="shareX" target="_blank" rel="noopener">𝕏 でシェア</a>
+      <button class="btn-sub" id="copyBtn">📋 結果をコピー</button>
+    </div>
+
+    <div class="card cta">
+      <p class="big">🔓 フル版 DreamCOMPASS でできること</p>
+      <ul>
+        <li><b>手相・顔相の画像AI分析</b>（写真を撮るだけ）</li>
+        <li><b>ローカルAIによる総合解釈</b> — 強み・伸びしろ・今日のアドバイスを文章で</li>
+        <li><b>完全な財務諸表出力</b>（資格の減価償却・後悔の負債計上まで）</li>
+        <li><b>月額0円・完全ローカル動作</b> — あなたのPCの外にデータが出ません</li>
+        <li><b>Obsidian連携</b> — メモを足すほどAIが賢くなる育成型システム</li>
+      </ul>
+      <p><a id="fullLink" href="#" target="_blank" rel="noopener" style="color:var(--gold)">→ フル版の詳細はこちら（note）</a></p>
+    </div>
+
+  </div>
+
+  <footer>
+    DreamCOMPASS Lite v1.0 ｜ 開発: にし部長<br>
+    本ツールは娯楽・自己理解を目的としたものであり、医療・心理・健康上の診断や助言ではありません。<br>
+    数秘術・姓名判断・夢占い等の解釈には諸説あります。結果はひとつの視点としてお楽しみください。<br>
+    入力された情報はサーバーに送信されず、この画面を閉じると破棄されます。
+  </footer>
+</div>
+
+<script id="lite-core">
+/*CORE-START*/
+// =====================================================================
+// DreamCOMPASS Lite — 計算コア
+// ai-server/modules/*.js のルールベース計算を忠実に移植（LLM部分を除く）
+// このブロックはDOMに依存しない純粋ロジック（Node.jsでの突合テスト対象）
+// =====================================================================
+
+// ---- 知識データ（ai-server/knowledge/ から埋め込み） ----
+
+const LIFE_PATH = {
+  "1": { name: "リーダー", keywords: ["独立","開拓","リーダーシップ","決断力"],
+    strengths: "自立心が強く、新しいことを切り開く力。決断力と行動力に優れる。",
+    weaknesses: "頑固になりがち。他人の意見を聞かない傾向。",
+    base_score: { 行動力:90, 知性:70, 感情:50, 安定性:60, 社交性:65 } },
+  "2": { name: "調和者", keywords: ["協調","共感","サポート","直感"],
+    strengths: "他者との調和を大切にし、優れた共感力を持つ。サポート役として力を発揮。",
+    weaknesses: "依存的になりやすい。自己主張が弱い。",
+    base_score: { 行動力:50, 知性:65, 感情:90, 安定性:70, 社交性:85 } },
+  "3": { name: "表現者", keywords: ["創造性","表現力","楽観","コミュニケーション"],
+    strengths: "創造力と表現力が豊か。楽観的で周囲を明るくする力がある。",
+    weaknesses: "散漫になりやすい。深く集中することが苦手。",
+    base_score: { 行動力:75, 知性:60, 感情:85, 安定性:45, 社交性:95 } },
+  "4": { name: "建設者", keywords: ["安定","秩序","実直","忍耐"],
+    strengths: "計画的で堅実。地道な努力を積み重ねて確実に成果を出す。",
+    weaknesses: "柔軟性に欠ける。変化を嫌う傾向。",
+    base_score: { 行動力:65, 知性:75, 感情:45, 安定性:95, 社交性:50 } },
+  "5": { name: "冒険者", keywords: ["自由","変化","好奇心","適応力"],
+    strengths: "好奇心旺盛で適応力が高い。新しい経験を求め続ける行動力。",
+    weaknesses: "飽きっぽい。落ち着きがない。",
+    base_score: { 行動力:95, 知性:65, 感情:70, 安定性:35, 社交性:80 } },
+  "6": { name: "奉仕者", keywords: ["責任","愛情","家庭","癒し"],
+    strengths: "責任感が強く、他者への深い愛情。家庭や地域に尽くす献身性。",
+    weaknesses: "過度に干渉しがち。自己犠牲が過ぎる。",
+    base_score: { 行動力:60, 知性:60, 感情:95, 安定性:80, 社交性:75 } },
+  "7": { name: "探求者", keywords: ["分析","内省","直感","精神性"],
+    strengths: "深い分析力と直感力。真実を追求する知的好奇心。",
+    weaknesses: "孤立しがち。疑り深い。",
+    base_score: { 行動力:45, 知性:95, 感情:60, 安定性:65, 社交性:35 } },
+  "8": { name: "達成者", keywords: ["成功","権力","実行力","物質的豊かさ"],
+    strengths: "目標達成への強い意志。ビジネスセンスと実行力に優れる。",
+    weaknesses: "物質主義に偏りがち。支配的になる傾向。",
+    base_score: { 行動力:85, 知性:80, 感情:40, 安定性:75, 社交性:65 } },
+  "9": { name: "博愛者", keywords: ["理想","慈悲","完成","普遍的な愛"],
+    strengths: "視野が広く、人類全体への深い愛情。理想を追い求める高い精神性。",
+    weaknesses: "現実離れしやすい。身近な人を軽視する傾向。",
+    base_score: { 行動力:70, 知性:75, 感情:90, 安定性:55, 社交性:80 } },
+  "11": { name: "マスターナンバー：直感の導き手", keywords: ["霊感","ビジョン","インスピレーション","敏感"],
+    strengths: "非常に鋭い直感力。ビジョナリーとして新しい道を示す才能。",
+    weaknesses: "神経過敏。プレッシャーに弱い。",
+    base_score: { 行動力:60, 知性:85, 感情:95, 安定性:40, 社交性:70 } },
+  "22": { name: "マスターナンバー：大建築家", keywords: ["実現力","壮大なビジョン","実務","マスタービルダー"],
+    strengths: "壮大なビジョンを現実の形にする力。4の実務力と11の直感の両方を持つ。",
+    weaknesses: "過度のプレッシャー。理想と現実のギャップに苦しむ。",
+    base_score: { 行動力:90, 知性:90, 感情:65, 安定性:70, 社交性:60 } },
+  "33": { name: "マスターナンバー：愛の導師", keywords: ["無償の愛","癒し","教え","慈悲"],
+    strengths: "最高レベルの慈愛。他者を導き癒す力。6の奉仕精神の究極形。",
+    weaknesses: "自己犠牲が極端。現実世界での苦労が多い。",
+    base_score: { 行動力:55, 知性:70, 感情:100, 安定性:50, 社交性:85 } }
+};
+
+const NUM_SCORING = {
+  scoring_axes: ["行動力","知性","感情","安定性","社交性"],
+  life_path_weight: 0.6,
+  birthday_weight: 0.4
+};
+
+const MBTI_TYPES = {
+  INTJ: { name:"建築家", dominant:"Ni（内向的直感）", auxiliary:"Te（外向的思考）", tertiary:"Fi（内向的感情）", inferior:"Se（外向的感覚）",
+    base_score:{ knowledge:95, emotion:45, stability:80, action:75 },
+    strengths:"戦略的思考、長期ビジョン、独立心、効率へのこだわり", weaknesses:"感情表現が苦手、完璧主義、他者への批判的な傾向" },
+  INTP: { name:"論理学者", dominant:"Ti（内向的思考）", auxiliary:"Ne（外向的直感）", tertiary:"Si（内向的感覚）", inferior:"Fe（外向的感情）",
+    base_score:{ knowledge:100, emotion:40, stability:60, action:55 },
+    strengths:"分析力、論理的思考、創造的な問題解決、好奇心", weaknesses:"社交が苦手、優柔不断、実行力不足" },
+  ENTJ: { name:"指揮官", dominant:"Te（外向的思考）", auxiliary:"Ni（内向的直感）", tertiary:"Se（外向的感覚）", inferior:"Fi（内向的感情）",
+    base_score:{ knowledge:85, emotion:40, stability:75, action:100 },
+    strengths:"リーダーシップ、効率的な管理、目標達成力、決断力", weaknesses:"支配的、感情に鈍感、短気" },
+  ENTP: { name:"討論者", dominant:"Ne（外向的直感）", auxiliary:"Ti（内向的思考）", tertiary:"Fe（外向的感情）", inferior:"Si（内向的感覚）",
+    base_score:{ knowledge:90, emotion:55, stability:45, action:85 },
+    strengths:"アイデア力、議論力、適応力、知的好奇心", weaknesses:"飽きっぽい、ルール軽視、挑発的" },
+  INFJ: { name:"提唱者", dominant:"Ni（内向的直感）", auxiliary:"Fe（外向的感情）", tertiary:"Ti（内向的思考）", inferior:"Se（外向的感覚）",
+    base_score:{ knowledge:80, emotion:95, stability:65, action:60 },
+    strengths:"深い共感力、ビジョン、信念、他者への貢献", weaknesses:"燃え尽きやすい、完璧主義、秘密主義" },
+  INFP: { name:"仲介者", dominant:"Fi（内向的感情）", auxiliary:"Ne（外向的直感）", tertiary:"Si（内向的感覚）", inferior:"Te（外向的思考）",
+    base_score:{ knowledge:70, emotion:100, stability:50, action:45 },
+    strengths:"創造力、理想主義、深い気持ちの理解、誠実さ", weaknesses:"現実逃避、批判に弱い、決断力不足" },
+  ENFJ: { name:"主人公", dominant:"Fe（外向的感情）", auxiliary:"Ni（内向的直感）", tertiary:"Se（外向的感覚）", inferior:"Ti（内向的思考）",
+    base_score:{ knowledge:70, emotion:90, stability:65, action:80 },
+    strengths:"カリスマ性、他者の成長支援、コミュニケーション力、責任感", weaknesses:"お節介、自己犠牲、批判を過度に気にする" },
+  ENFP: { name:"広報運動家", dominant:"Ne（外向的直感）", auxiliary:"Fi（内向的感情）", tertiary:"Te（外向的思考）", inferior:"Si（内向的感覚）",
+    base_score:{ knowledge:75, emotion:85, stability:40, action:75 },
+    strengths:"熱意、創造力、社交性、柔軟性", weaknesses:"計画性不足、集中力不足、感情の波が激しい" },
+  ISTJ: { name:"管理者", dominant:"Si（内向的感覚）", auxiliary:"Te（外向的思考）", tertiary:"Fi（内向的感情）", inferior:"Ne（外向的直感）",
+    base_score:{ knowledge:80, emotion:50, stability:100, action:70 },
+    strengths:"責任感、正確さ、勤勉、伝統を守る", weaknesses:"頑固、変化を嫌う、感情表現が苦手" },
+  ISFJ: { name:"擁護者", dominant:"Si（内向的感覚）", auxiliary:"Fe（外向的感情）", tertiary:"Ti（内向的思考）", inferior:"Ne（外向的直感）",
+    base_score:{ knowledge:65, emotion:85, stability:95, action:50 },
+    strengths:"献身的、思いやり、記憶力、実務力", weaknesses:"自己主張が弱い、変化を恐れる、過労になりがち" },
+  ESTJ: { name:"幹部", dominant:"Te（外向的思考）", auxiliary:"Si（内向的感覚）", tertiary:"Ne（外向的直感）", inferior:"Fi（内向的感情）",
+    base_score:{ knowledge:75, emotion:40, stability:85, action:95 },
+    strengths:"統率力、組織力、実行力、責任感", weaknesses:"融通が利かない、権威的、感情に鈍い" },
+  ESFJ: { name:"領事官", dominant:"Fe（外向的感情）", auxiliary:"Si（内向的感覚）", tertiary:"Ne（外向的直感）", inferior:"Ti（内向的思考）",
+    base_score:{ knowledge:60, emotion:90, stability:80, action:65 },
+    strengths:"社交性、気配り、協調性、責任感", weaknesses:"他人の評価を気にしすぎ、保守的、批判に弱い" },
+  ISTP: { name:"巨匠", dominant:"Ti（内向的思考）", auxiliary:"Se（外向的感覚）", tertiary:"Ni（内向的直感）", inferior:"Fe（外向的感情）",
+    base_score:{ knowledge:85, emotion:35, stability:70, action:90 },
+    strengths:"問題解決力、手先の器用さ、冷静さ、適応力", weaknesses:"無頓着、孤立しがち、長期計画が苦手" },
+  ISFP: { name:"冒険家", dominant:"Fi（内向的感情）", auxiliary:"Se（外向的感覚）", tertiary:"Ni（内向的直感）", inferior:"Te（外向的思考）",
+    base_score:{ knowledge:55, emotion:90, stability:55, action:70 },
+    strengths:"芸術的感性、思いやり、現在を楽しむ力、柔軟性", weaknesses:"計画性不足、衝突を避ける、自己主張が弱い" },
+  ESTP: { name:"起業家", dominant:"Se（外向的感覚）", auxiliary:"Ti（内向的思考）", tertiary:"Fe（外向的感情）", inferior:"Ni（内向的直感）",
+    base_score:{ knowledge:70, emotion:45, stability:45, action:100 },
+    strengths:"行動力、社交性、リスクを取れる、観察力", weaknesses:"衝動的、退屈を嫌う、長期的視野の欠如" },
+  ESFP: { name:"エンターテイナー", dominant:"Se（外向的感覚）", auxiliary:"Fi（内向的感情）", tertiary:"Te（外向的思考）", inferior:"Ni（内向的直感）",
+    base_score:{ knowledge:55, emotion:75, stability:40, action:95 },
+    strengths:"楽観的、社交的、パフォーマンス力、共感力", weaknesses:"計画性不足、批判に弱い、飽きっぽい" }
+};
+
+const NAME_RULES = {
+  grids: {
+    天格: { meaning: "先祖から受け継いだ運勢。家系の運。変えられない宿命的要素。", weight: 0.10 },
+    人格: { meaning: "性格・才能・対人関係を表す最重要格。人生の中心的な運。", weight: 0.30 },
+    地格: { meaning: "幼少期〜青年期の運勢。基盤となる能力や素質。", weight: 0.20 },
+    外格: { meaning: "対外的な印象、社会との関わり方、対人運。", weight: 0.15 },
+    総格: { meaning: "人生全体の運勢。特に晩年の運を表す。", weight: 0.25 }
+  },
+  luck_table: {
+    大吉: [1,3,5,6,7,8,11,13,15,16,17,18,21,23,24,25,29,31,32,33,35,37,38,39,41,45,47,48,52,57,58,61,63,65,67,68,73,75,81],
+    吉: [2,10,14,27,30,36,40,42,46,49,50,51,53,55,57,60,62,64,66,69,70,72,74,76,78],
+    凶: [4,9,12,19,20,22,26,28,34,43,44,46,54,56,59,71,77,79,80]
+  },
+  score_mapping: { 大吉: 90, 吉: 60, 凶: 30 }
+};
+
+const BMI_RULES = {
+  ranges: [
+    { min:0,    max:16.0, label:"痩せすぎ", score:25, health_risk:"高" },
+    { min:16.0, max:17.0, label:"痩せ",     score:40, health_risk:"中" },
+    { min:17.0, max:18.5, label:"やや痩せ", score:60, health_risk:"低" },
+    { min:18.5, max:25.0, label:"適正",     score:95, health_risk:"最低" },
+    { min:25.0, max:30.0, label:"やや肥満", score:55, health_risk:"低〜中" },
+    { min:30.0, max:35.0, label:"肥満",     score:35, health_risk:"中〜高" },
+    { min:35.0, max:100,  label:"高度肥満", score:20, health_risk:"高" }
+  ],
+  elements: {
+    木: { bmi_range:[16,19], season:"春（2〜4月生まれ）", traits:"成長力、柔軟性、向上心",
+      health_advice:"肝臓のケア。酸味のある食べ物を適度に。ストレッチが効果的。", score_bonus:{ 行動力:5, 安定性:-3 } },
+    火: { bmi_range:[19,22], season:"夏（5〜7月生まれ）", traits:"情熱、エネルギー、表現力",
+      health_advice:"心臓のケア。苦味のある食べ物を適度に。有酸素運動が効果的。", score_bonus:{ 感情:5, 安定性:-3 } },
+    土: { bmi_range:[22,25], season:"土用（各季節の変わり目）", traits:"安定感、信頼性、包容力",
+      health_advice:"胃腸のケア。甘味のある食べ物を適度に。ウォーキングが効果的。", score_bonus:{ 安定性:5, 行動力:-3 } },
+    金: { bmi_range:[20,23], season:"秋（8〜10月生まれ）", traits:"精密さ、規律、集中力",
+      health_advice:"肺のケア。辛味のある食べ物を適度に。呼吸法が効果的。", score_bonus:{ 知性:5, 感情:-3 } },
+    水: { bmi_range:[23,28], season:"冬（11〜1月生まれ）", traits:"柔軟性、知恵、適応力",
+      health_advice:"腎臓のケア。塩味のある食べ物を控えめに。水泳や入浴が効果的。", score_bonus:{ 知性:3, 行動力:-3 } }
+  }
+};
+
+const DREAM_RULES = { base_score: 50, keyword_match_bonus: 5, max_symbols_scored: 5 };
+
+const DREAM_SYMBOLS = {
+  "自然・天候": {
+    "太陽": { modifier:15, meaning:"成功、エネルギー、目標達成", category:"大吉" },
+    "月":   { modifier:10, meaning:"直感、女性性、内面の気づき", category:"吉" },
+    "星":   { modifier:12, meaning:"希望、目標、導き", category:"吉" },
+    "虹":   { modifier:20, meaning:"幸運の前兆、達成、希望", category:"大吉" },
+    "雨":   { modifier:-5, meaning:"浄化、感情の解放、一時的な困難", category:"小凶" },
+    "嵐":   { modifier:-15, meaning:"激しい変化、感情の爆発、試練", category:"凶" },
+    "雪":   { modifier:3, meaning:"純粋さ、新しい始まり、静寂", category:"小吉" },
+    "海":   { modifier:5, meaning:"無意識、感情の深さ、可能性", category:"吉" },
+    "山":   { modifier:8, meaning:"目標、挑戦、達成感", category:"吉" },
+    "川":   { modifier:3, meaning:"人生の流れ、変化、時間の経過", category:"小吉" },
+    "花":   { modifier:10, meaning:"美、成長、恋愛運", category:"吉" },
+    "森":   { modifier:5, meaning:"未知の領域、成長、自然回帰", category:"吉" }
+  },
+  "動物": {
+    "龍": { modifier:25, meaning:"大きな力、成功、守護", category:"大吉" },
+    "蛇": { modifier:10, meaning:"知恵、変容、金運", category:"吉" },
+    "鳥": { modifier:8, meaning:"自由、メッセージ、精神性", category:"吉" },
+    "猫": { modifier:5, meaning:"独立、直感、女性的エネルギー", category:"小吉" },
+    "犬": { modifier:7, meaning:"忠誠、友情、信頼", category:"吉" },
+    "馬": { modifier:12, meaning:"自由、パワー、前進", category:"吉" },
+    "魚": { modifier:10, meaning:"豊かさ、幸運、潜在意識", category:"吉" },
+    "虫": { modifier:-8, meaning:"小さな不安、些細な問題", category:"小凶" }
+  },
+  "行動": {
+    "飛ぶ": { modifier:15, meaning:"自由への渇望、高い目標、解放感", category:"大吉" },
+    "走る": { modifier:5, meaning:"目標への前進、焦り、逃避", category:"小吉" },
+    "落ちる": { modifier:-20, meaning:"不安、コントロールの喪失、失敗の恐怖", category:"凶" },
+    "泳ぐ": { modifier:8, meaning:"感情の探求、適応力、リフレッシュ", category:"吉" },
+    "戦う": { modifier:-5, meaning:"内面の葛藤、挑戦、闘志", category:"小凶" },
+    "歌う": { modifier:12, meaning:"自己表現、喜び、ハーモニー", category:"吉" },
+    "笑う": { modifier:10, meaning:"幸福、安心、ポジティブなエネルギー", category:"吉" },
+    "泣く": { modifier:-3, meaning:"感情の浄化、解放、癒し", category:"小凶" },
+    "追われる": { modifier:-15, meaning:"プレッシャー、回避したい問題、ストレス", category:"凶" },
+    "死ぬ": { modifier:5, meaning:"変容、再生、古い自分との決別（実は吉夢）", category:"吉" }
+  },
+  "場所": {
+    "学校": { modifier:3, meaning:"学び、過去の記憶、成長の必要", category:"小吉" },
+    "家":   { modifier:5, meaning:"安全、自己、内面の状態", category:"小吉" },
+    "病院": { modifier:-5, meaning:"癒しの必要、健康への注意", category:"小凶" },
+    "神社": { modifier:15, meaning:"精神性、守護、浄化", category:"大吉" },
+    "寺":   { modifier:15, meaning:"精神性、教え、内省", category:"大吉" },
+    "宇宙": { modifier:20, meaning:"無限の可能性、スピリチュアルな成長", category:"大吉" }
+  },
+  "物": {
+    "鍵":   { modifier:12, meaning:"チャンス、解決策、新しいドア", category:"吉" },
+    "鏡":   { modifier:5, meaning:"自己認識、真実、内省", category:"小吉" },
+    "お金": { modifier:8, meaning:"価値、エネルギー、自己価値観", category:"吉" },
+    "刃物": { modifier:-10, meaning:"断ち切り、攻撃性、決断", category:"凶" },
+    "宝石": { modifier:18, meaning:"価値ある発見、才能、輝き", category:"大吉" }
+  },
+  "感情キーワード": {
+    "幸せ":   { modifier:15, meaning:"現在の心の充足", category:"大吉" },
+    "楽しい": { modifier:12, meaning:"ポジティブなエネルギー", category:"吉" },
+    "怖い":   { modifier:-10, meaning:"不安、未知への恐れ", category:"凶" },
+    "悲しい": { modifier:-8, meaning:"喪失感、浄化の必要", category:"小凶" },
+    "怒り":   { modifier:-10, meaning:"抑圧された感情、行動の必要", category:"凶" },
+    "安心":   { modifier:10, meaning:"内面の安定、信頼", category:"吉" }
+  }
+};
+
+// 5軸の重み（フル版 weights.json と同値。診断した軸だけで再正規化して総合スコアを出す）
+const CATEGORY_WEIGHTS = {
+  numerology: { label:"数秘術", weight:0.12 },
+  mbti: { label:"MBTI", weight:0.15 },
+  name_analysis: { label:"姓名判断", weight:0.10 },
+  body: { label:"身体バランス", weight:0.10 },
+  dream: { label:"夢占い", weight:0.13 }
+};
+
+const GRADE_THRESHOLDS = [
+  { grade:"SSS", min:95, label:"神懸かり", description:"すべてが最高レベルで調和している" },
+  { grade:"SS",  min:85, label:"大吉",     description:"非常にバランスが良く、素晴らしい状態" },
+  { grade:"S",   min:75, label:"吉",       description:"良好な状態。いくつかの強みが際立つ" },
+  { grade:"A",   min:65, label:"小吉",     description:"概ね良い状態。向上の余地あり" },
+  { grade:"B",   min:50, label:"普通",     description:"バランスは取れているが、改善ポイントがある" },
+  { grade:"C",   min:35, label:"注意",     description:"いくつかの面で改善が必要" },
+  { grade:"D",   min:0,  label:"要改善",   description:"多くの面で見直しが必要" }
+];
+
+// ---- 数秘術（modules/numerology.js 移植） ----
+
+function reduceToSingle(num) {
+  while (num > 9 && num !== 11 && num !== 22 && num !== 33) {
+    num = String(num).split('').reduce((sum, d) => sum + parseInt(d), 0);
+  }
+  return num;
+}
+
+function calculateLifePathNumber(dob) {
+  if (!dob) return null;
+  const digits = dob.replace(/-/g, '');
+  const sum = digits.split('').reduce((acc, d) => acc + parseInt(d), 0);
+  return reduceToSingle(sum);
+}
+
+function calculateBirthdayNumber(dob) {
+  if (!dob) return null;
+  const day = parseInt(dob.split('-')[2]);
+  return reduceToSingle(day);
+}
+
+function analyzeNumerology(dob) {
+  if (!dob) return { category:'numerology', error:'生年月日が入力されていません', scores:null };
+
+  const lifePathNum = calculateLifePathNumber(dob);
+  const birthdayNum = calculateBirthdayNumber(dob);
+  const lpData = LIFE_PATH[String(lifePathNum)] || LIFE_PATH['1'];
+  const bdData = LIFE_PATH[String(birthdayNum)] || LIFE_PATH['1'];
+
+  const scores = {};
+  for (const axis of NUM_SCORING.scoring_axes) {
+    const lpScore = lpData.base_score[axis] || 50;
+    const bdScore = bdData.base_score[axis] || 50;
+    scores[axis] = Math.round(lpScore * NUM_SCORING.life_path_weight + bdScore * NUM_SCORING.birthday_weight);
+  }
+
+  const bonusApplied = [];
+  if (lifePathNum === birthdayNum) {
+    for (const axis of NUM_SCORING.scoring_axes) scores[axis] = Math.min(100, scores[axis] + 5);
+    bonusApplied.push('数字のエネルギーが集中して強化される');
+  }
+  if ([11, 22, 33].includes(lifePathNum)) {
+    for (const axis of NUM_SCORING.scoring_axes) scores[axis] = Math.min(100, scores[axis] + 3);
+    bonusApplied.push('特別な使命を持つ数字');
+  }
+
+  const totalScore = Math.round(Object.values(scores).reduce((a, b) => a + b, 0) / NUM_SCORING.scoring_axes.length);
+
+  return { category:'numerology', label:'数秘術',
+    lifePathNumber: lifePathNum, lifePathName: lpData.name,
+    birthdayNumber: birthdayNum, birthdayName: bdData.name,
+    keywords: lpData.keywords, strengths: lpData.strengths, weaknesses: lpData.weaknesses,
+    scores, totalScore, bonusApplied };
+}
+
+// ---- MBTI（modules/mbti.js 移植） ----
+
+function analyzeMbti(mbtiType) {
+  if (!mbtiType) return { category:'mbti', error:'MBTIタイプが入力されていません', scores:null };
+  const typeKey = mbtiType.toUpperCase();
+  const typeData = MBTI_TYPES[typeKey];
+  if (!typeData) return { category:'mbti', error:`不明なMBTIタイプ: ${mbtiType}`, scores:null };
+
+  const scores = {
+    知識力: typeData.base_score.knowledge,
+    感情力: typeData.base_score.emotion,
+    安定力: typeData.base_score.stability,
+    行動力: typeData.base_score.action
+  };
+  const totalScore = Math.round(Object.values(scores).reduce((a, b) => a + b, 0) / 4);
+
+  return { category:'mbti', label:'MBTI', type:typeKey, typeName:typeData.name,
+    cognitiveFunctions: { dominant:typeData.dominant, auxiliary:typeData.auxiliary, tertiary:typeData.tertiary, inferior:typeData.inferior },
+    scores, totalScore, strengths:typeData.strengths, weaknesses:typeData.weaknesses };
+}
+
+// ---- 姓名判断（modules/nameAnalysis.js 移植） ----
+
+function estimateStrokeCount(char) {
+  const code = char.codePointAt(0);
+  if (code >= 0x3040 && code <= 0x309F) return 3; // ひらがな
+  if (code >= 0x30A0 && code <= 0x30FF) return 3; // カタカナ
+  if ((code >= 0x3400 && code <= 0x4DBF) || (code >= 0x4E00 && code <= 0x9FFF) || (code >= 0x20000 && code <= 0x2EBEF)) {
+    const range = Math.abs(code - 0x4E00);
+    return Math.floor((range % 15) + 4); // 4-18画の簡易推定
+  }
+  return 1;
+}
+
+function getLuck(strokeCount) {
+  const normalized = strokeCount > 81 ? strokeCount - 80 : strokeCount;
+  if (NAME_RULES.luck_table['大吉'].includes(normalized)) return '大吉';
+  if (NAME_RULES.luck_table['凶'].includes(normalized)) return '凶';
+  return '吉';
+}
+
+function analyzeName(familyName, givenName, familyStrokesInput = [], givenStrokesInput = []) {
+  if (!familyName || !givenName) return { category:'name_analysis', error:'姓名が入力されていません', scores:null };
+
+  // Array.from でサロゲートペア（𠮷 など）を1文字として扱う
+  const familyChars = Array.from(familyName);
+  const givenChars = Array.from(givenName);
+  const familyStrokes = familyChars.map((c, i) => ({
+    char: c,
+    strokes: (familyStrokesInput && familyStrokesInput[i]) ? familyStrokesInput[i] : estimateStrokeCount(c)
+  }));
+  const givenStrokes = givenChars.map((c, i) => ({
+    char: c,
+    strokes: (givenStrokesInput && givenStrokesInput[i]) ? givenStrokesInput[i] : estimateStrokeCount(c)
+  }));
+
+  const familyTotal = familyStrokes.reduce((sum, c) => sum + c.strokes, 0);
+  const givenTotal = givenStrokes.reduce((sum, c) => sum + c.strokes, 0);
+
+  const grids = {
+    天格: { strokes: familyTotal + (familyChars.length === 1 ? 1 : 0), meaning: NAME_RULES.grids['天格'].meaning },
+    人格: { strokes: familyStrokes[familyStrokes.length - 1].strokes + givenStrokes[0].strokes, meaning: NAME_RULES.grids['人格'].meaning },
+    地格: { strokes: givenTotal, meaning: NAME_RULES.grids['地格'].meaning },
+    総格: { strokes: familyTotal + givenTotal, meaning: NAME_RULES.grids['総格'].meaning }
+  };
+  grids['外格'] = { strokes: grids['総格'].strokes - grids['人格'].strokes, meaning: NAME_RULES.grids['外格'].meaning };
+
+  const scores = {};
+  let weightedTotal = 0;
+  let totalWeight = 0;
+  for (const [gridName, gridData] of Object.entries(grids)) {
+    const luck = getLuck(gridData.strokes);
+    const score = NAME_RULES.score_mapping[luck];
+    const weight = NAME_RULES.grids[gridName].weight;
+    grids[gridName].luck = luck;
+    grids[gridName].score = score;
+    scores[gridName] = score;
+    weightedTotal += score * weight;
+    totalWeight += weight;
+  }
+  const totalScore = Math.round(weightedTotal / totalWeight);
+
+  return { category:'name_analysis', label:'姓名判断', fullName: familyName + givenName,
+    grids, strokeDetails: { family: familyStrokes, given: givenStrokes }, scores, totalScore };
+}
+
+// ---- 身体バランス（modules/body.js 移植） ----
+
+function calculateBMI(heightCm, weightKg) {
+  if (!heightCm || !weightKg || heightCm <= 0 || weightKg <= 0) return null;
+  return weightKg / Math.pow(heightCm / 100, 2);
+}
+
+function getBMIScore(bmi) {
+  for (const range of BMI_RULES.ranges) {
+    if (bmi >= range.min && bmi < range.max) {
+      return { label: range.label, score: range.score, healthRisk: range.health_risk };
+    }
+  }
+  return { label:'不明', score:50, healthRisk:'不明' };
+}
+
+function estimateFiveElement(bmi, dob) {
+  if (!dob) return { element:'土', reason:'デフォルト' };
+  const month = parseInt(dob.split('-')[1]);
+  let seasonElement;
+  if (month >= 2 && month <= 4) seasonElement = '木';
+  else if (month >= 5 && month <= 7) seasonElement = '火';
+  else if (month >= 8 && month <= 10) seasonElement = '金';
+  else seasonElement = '水';
+
+  if (bmi) {
+    for (const [elem, data] of Object.entries(BMI_RULES.elements)) {
+      if (bmi >= data.bmi_range[0] && bmi < data.bmi_range[1]) {
+        if (elem === seasonElement) {
+          return { element: elem, reason: `季節（${data.season}）とBMI範囲が一致`, confidence: 'high' };
+        }
+      }
+    }
+  }
+  return { element: seasonElement, reason: `生まれ月（${month}月）から推定`, confidence: 'medium' };
+}
+
+function analyzeBody(heightCm, weightKg, dob) {
+  const bmi = calculateBMI(heightCm, weightKg);
+  if (!bmi) return { category:'body', error:'身長・体重が入力されていません', scores:null };
+
+  const bmiResult = getBMIScore(bmi);
+  const element = estimateFiveElement(bmi, dob);
+  const elementData = BMI_RULES.elements[element.element];
+
+  const scores = {
+    健康: bmiResult.score,
+    バランス: Math.round(100 - Math.abs(22 - bmi) * 8)
+  };
+  if (elementData && elementData.score_bonus) {
+    for (const [axis, bonus] of Object.entries(elementData.score_bonus)) {
+      scores[axis] = Math.max(0, Math.min(100, 50 + bonus));
+    }
+  }
+  const totalScore = Math.round(Object.values(scores).reduce((a, b) => a + b, 0) / Object.keys(scores).length);
+
+  return { category:'body', label:'身体バランス',
+    bmi: Math.round(bmi * 10) / 10, bmiLabel: bmiResult.label, healthRisk: bmiResult.healthRisk,
+    fiveElement: element.element, fiveElementReason: element.reason,
+    fiveElementTraits: elementData ? elementData.traits : '',
+    healthAdvice: elementData ? elementData.health_advice : '',
+    scores, totalScore };
+}
+
+// ---- 夢占い（modules/dream.js 移植） ----
+
+function detectSymbols(text) {
+  if (!text) return [];
+  const detected = [];
+  const normalizedText = text.toLowerCase();
+  for (const [category, categorySymbols] of Object.entries(DREAM_SYMBOLS)) {
+    for (const [symbol, data] of Object.entries(categorySymbols)) {
+      if (normalizedText.includes(symbol)) {
+        detected.push({ symbol, category, modifier: data.modifier, meaning: data.meaning, luckCategory: data.category });
+      }
+    }
+  }
+  detected.sort((a, b) => Math.abs(b.modifier) - Math.abs(a.modifier));
+  return detected;
+}
+
+function analyzeDream(dreamText) {
+  if (!dreamText || dreamText.trim().length === 0) {
+    return { category:'dream', error:'夢の内容が入力されていません', scores:null };
+  }
+  const detected = detectSymbols(dreamText);
+  let score = DREAM_RULES.base_score;
+  const scoredSymbols = detected.slice(0, DREAM_RULES.max_symbols_scored);
+  for (const sym of scoredSymbols) score += sym.modifier;
+  if (dreamText.length > 50) score += DREAM_RULES.keyword_match_bonus;
+  score = Math.max(0, Math.min(100, score));
+
+  const categoryBreakdown = {};
+  for (const sym of detected) {
+    categoryBreakdown[sym.luckCategory] = (categoryBreakdown[sym.luckCategory] || 0) + 1;
+  }
+
+  return { category:'dream', label:'夢占い', scores: { 運勢スコア: score }, totalScore: score,
+    detectedSymbols: scoredSymbols, allDetectedCount: detected.length, categoryBreakdown };
+}
+
+// ---- 総合スコア・グレード ----
+
+function computeOverall(results) {
+  // 診断できた軸の重みを再正規化して加重平均
+  let weightSum = 0, scoreSum = 0;
+  for (const r of results) {
+    if (r && !r.error && CATEGORY_WEIGHTS[r.category]) {
+      const w = CATEGORY_WEIGHTS[r.category].weight;
+      weightSum += w;
+      scoreSum += r.totalScore * w;
+    }
+  }
+  if (weightSum === 0) return null;
+  const total = Math.round(scoreSum / weightSum);
+  const g = GRADE_THRESHOLDS.find(t => total >= t.min) || GRADE_THRESHOLDS[GRADE_THRESHOLDS.length - 1];
+  return { totalScore: total, grade: g.grade, gradeLabel: g.label, gradeDescription: g.description };
+}
+
+// Node.js 突合テスト用エクスポート（ブラウザでは無視される）
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = {
+    analyzeNumerology, analyzeMbti, analyzeName, analyzeBody, analyzeDream,
+    computeOverall, estimateStrokeCount, detectSymbols,
+    calculateLifePathNumber, calculateBirthdayNumber, calculateBMI
+  };
+}
+/*CORE-END*/
+</script>
+
+<script>
+// =====================================================================
+// UI レイヤー
+// =====================================================================
+
+// ▼ 公開時にここをnote記事URLに書き換える
+const FULL_VERSION_URL = "https://note.com/";
+const SHARE_HASHTAGS = "#DreamCOMPASS #魂の財務諸表";
+
+const $ = id => document.getElementById(id);
+
+// MBTIセレクト生成
+(function initMbtiSelect() {
+  const sel = $('mbti');
+  for (const [key, data] of Object.entries(MBTI_TYPES)) {
+    const opt = document.createElement('option');
+    opt.value = key;
+    opt.textContent = `${key} — ${data.name}`;
+    sel.appendChild(opt);
+  }
+})();
+
+// 名前入力 → 画数エディタ生成
+function refreshStrokeEditor() {
+  const family = $('familyName').value.trim();
+  const given = $('givenName').value.trim();
+  const box = $('strokeInputs');
+  const editor = $('strokeEditor');
+  box.innerHTML = '';
+  if (!family && !given) { editor.style.display = 'none'; return; }
+  editor.style.display = 'block';
+  const addChars = (text, prefix) => {
+    Array.from(text).forEach((ch, i) => {
+      const div = document.createElement('div');
+      div.className = 'schar';
+      const label = document.createElement('span');
+      label.textContent = ch;
+      const input = document.createElement('input');
+      input.type = 'number'; input.min = 1; input.max = 40;
+      input.value = estimateStrokeCount(ch);
+      input.id = `${prefix}-stroke-${i}`;
+      div.appendChild(label); div.appendChild(input);
+      box.appendChild(div);
+    });
+  };
+  addChars(family, 'f');
+  addChars(given, 'g');
+}
+$('familyName').addEventListener('input', refreshStrokeEditor);
+$('givenName').addEventListener('input', refreshStrokeEditor);
+
+function collectStrokes(text, prefix) {
+  return Array.from(text).map((ch, i) => {
+    const el = $(`${prefix}-stroke-${i}`);
+    const v = el ? parseInt(el.value) : NaN;
+    return (v && v > 0) ? v : estimateStrokeCount(ch);
+  });
+}
+
+// フォーム保存・復元（このブラウザ内のみ）
+function saveForm() {
+  try {
+    const data = {
+      dob: $('dob').value, familyName: $('familyName').value, givenName: $('givenName').value,
+      height: $('height').value, weight: $('weight').value, mbti: $('mbti').value
+    };
+    localStorage.setItem('dclite-form', JSON.stringify(data));
+  } catch (e) { /* プライベートモード等では保存しない */ }
+}
+(function restoreForm() {
+  try {
+    const raw = localStorage.getItem('dclite-form');
+    if (!raw) return;
+    const data = JSON.parse(raw);
+    for (const key of ['dob','familyName','givenName','height','weight','mbti']) {
+      if (data[key]) $(key).value = data[key];
+    }
+    refreshStrokeEditor();
+  } catch (e) { /* ignore */ }
+})();
+
+// ---- 診断実行 ----
+$('analyzeBtn').addEventListener('click', () => {
+  const dob = $('dob').value;
+  const family = $('familyName').value.trim();
+  const given = $('givenName').value.trim();
+  const height = parseFloat($('height').value);
+  const weight = parseFloat($('weight').value);
+  const mbti = $('mbti').value;
+  const dream = $('dream').value.trim();
+
+  const err = $('errMsg');
+  if (!dob && !(family && given) && !mbti && !(height && weight) && !dream) {
+    err.textContent = '最低1つの項目を入力してください（生年月日だけでも診断できます）';
+    err.style.display = 'block';
+    return;
+  }
+  err.style.display = 'none';
+  saveForm();
+
+  const results = [];
+  if (dob) results.push(analyzeNumerology(dob));
+  if (mbti) results.push(analyzeMbti(mbti));
+  if (family && given) results.push(analyzeName(family, given, collectStrokes(family, 'f'), collectStrokes(given, 'g')));
+  if (height && weight) results.push(analyzeBody(height, weight, dob));
+  if (dream) results.push(analyzeDream(dream));
+
+  const valid = results.filter(r => !r.error);
+  if (valid.length === 0) {
+    err.textContent = '診断できる入力がありませんでした。入力内容を確認してください。';
+    err.style.display = 'block';
+    return;
+  }
+  const overall = computeOverall(valid);
+  render(valid, overall);
+});
+
+// ---- 結果描画 ----
+let lastShareText = '';
+
+function render(results, overall) {
+  $('result').style.display = 'block';
+
+  // グレード
+  $('gradeBadge').textContent = overall.grade;
+  $('gradeLabel').textContent = `総合グレード ${overall.grade}（${overall.gradeLabel}）`;
+  $('gradeDesc').textContent = overall.gradeDescription;
+  $('totalLine').textContent = `総合スコア ${overall.totalScore} / 100 ・ 診断軸 ${results.length}/5（体験版）`;
+  // バッジ再アニメーション
+  const badge = $('gradeBadge');
+  badge.style.animation = 'none'; void badge.offsetWidth; badge.style.animation = '';
+
+  // スコアバー
+  const bars = $('bars');
+  bars.innerHTML = '';
+  for (const r of results) {
+    const row = document.createElement('div');
+    row.className = 'bar-row';
+    row.innerHTML = `<div class="bar-head"><span>${iconOf(r.category)} ${r.label}</span><b>${r.totalScore}点</b></div>
+      <div class="bar-bg"><div class="bar-fill" data-w="${Math.max(0, Math.min(100, r.totalScore))}"></div></div>`;
+    bars.appendChild(row);
+  }
+  requestAnimationFrame(() => {
+    document.querySelectorAll('.bar-fill').forEach(el => { el.style.width = el.dataset.w + '%'; });
+  });
+
+  // B/S（ストック4軸）
+  const stock = results.filter(r => ['numerology','mbti','name_analysis','body'].includes(r.category));
+  const bs = $('bsTable');
+  bs.innerHTML = '<tr><th>資産の部</th><th style="text-align:right">評価額</th></tr>';
+  let bsTotal = 0;
+  for (const r of stock) {
+    bsTotal += r.totalScore;
+    bs.innerHTML += `<tr><td>${iconOf(r.category)} ${r.label}${assetNote(r)}</td><td class="num">${(r.totalScore * 1000).toLocaleString()} SP</td></tr>`;
+  }
+  bs.innerHTML += `<tr class="total"><td>魂の総資産</td><td class="num">${(bsTotal * 1000).toLocaleString()} SP</td></tr>`;
+
+  // P/L（夢＝フロー）
+  const pl = $('plTable');
+  const dreamR = results.find(r => r.category === 'dream');
+  if (dreamR) {
+    pl.innerHTML = '<tr><th>科目</th><th style="text-align:right">金額</th></tr>';
+    const plus = dreamR.detectedSymbols.filter(s => s.modifier > 0);
+    const minus = dreamR.detectedSymbols.filter(s => s.modifier < 0);
+    pl.innerHTML += `<tr><td>基礎運勢（期首残高）</td><td class="num">50,000 SP</td></tr>`;
+    for (const s of plus) pl.innerHTML += `<tr><td>吉兆収益「${s.symbol}」</td><td class="num">+${(s.modifier * 1000).toLocaleString()} SP</td></tr>`;
+    for (const s of minus) pl.innerHTML += `<tr><td>心理費用「${s.symbol}」</td><td class="num">${(s.modifier * 1000).toLocaleString()} SP</td></tr>`;
+    pl.innerHTML += `<tr class="total"><td>当期の運勢純利益</td><td class="num">${(dreamR.totalScore * 1000).toLocaleString()} SP</td></tr>`;
+  } else {
+    pl.innerHTML = '<tr><td style="color:var(--sub)">夢を入力すると「当期の運勢フロー」が計上されます</td></tr>';
+  }
+
+  // 詳細
+  const det = $('details');
+  det.innerHTML = '';
+  for (const r of results) det.innerHTML += detailHtml(r);
+
+  // シェアテキスト
+  const axisLine = results.map(r => `${r.label}${r.totalScore}`).join(' | ');
+  lastShareText = `🧭 私の魂の決算（DreamCOMPASS Lite）\n総合グレード: ${overall.grade}（${overall.gradeLabel}）\n${axisLine}\n${SHARE_HASHTAGS}`;
+  $('shareX').href = 'https://twitter.com/intent/tweet?text=' + encodeURIComponent(lastShareText);
+
+  $('result').scrollIntoView({ behavior: 'smooth' });
+}
+
+function iconOf(cat) {
+  return { numerology:'🔢', mbti:'🧠', name_analysis:'✍️', body:'⚖️', dream:'🌙' }[cat] || '✨';
+}
+
+function assetNote(r) {
+  if (r.category === 'numerology') return `（固定資産・LP${r.lifePathNumber}）`;
+  if (r.category === 'mbti') return `（無形資産・${r.type}）`;
+  if (r.category === 'name_analysis') return '（のれん）';
+  if (r.category === 'body') return `（流動資産・${r.fiveElement}）`;
+  return '';
+}
+
+function detailHtml(r) {
+  let inner = '';
+  if (r.category === 'numerology') {
+    inner = `ライフパスナンバー <b>${r.lifePathNumber}</b>「${r.lifePathName}」／バースデーナンバー <b>${r.birthdayNumber}</b>「${r.birthdayName}」<br>
+      <span class="kw">${r.keywords.map(k => '#' + k).join(' ')}</span><br>
+      💪 ${r.strengths}<br><span class="weak">⚠ ${r.weaknesses}</span>
+      ${r.bonusApplied.length ? '<br>✨ ボーナス: ' + r.bonusApplied.join('・') : ''}`;
+  } else if (r.category === 'mbti') {
+    inner = `<b>${r.type}</b>「${r.typeName}」<br>
+      主機能 ${r.cognitiveFunctions.dominant} ／ 補助 ${r.cognitiveFunctions.auxiliary}<br>
+      💪 ${r.strengths}<br><span class="weak">⚠ ${r.weaknesses}</span>`;
+  } else if (r.category === 'name_analysis') {
+    const rows = Object.entries(r.grids).map(([g, d]) =>
+      `<tr><td>${g}</td><td class="num">${d.strokes}画</td><td>${d.luck}</td><td class="num">${d.score}点</td></tr>`).join('');
+    inner = `「${r.fullName}」の五格<table class="fin"><tr><th>格</th><th style="text-align:right">画数</th><th>吉凶</th><th style="text-align:right">スコア</th></tr>${rows}</table>
+      <div class="hint">※画数は入力値（未修正の場合は簡易推定）に基づきます。</div>`;
+  } else if (r.category === 'body') {
+    inner = `BMI <b>${r.bmi}</b>（${r.bmiLabel}）／五行タイプ: <b>${r.fiveElement}</b>（${r.fiveElementReason}）<br>
+      🌿 特性: ${r.fiveElementTraits}<br>💡 ${r.healthAdvice}`;
+  } else if (r.category === 'dream') {
+    const syms = r.detectedSymbols.map(s =>
+      `<span class="sym ${s.modifier >= 0 ? 'plus' : 'minus'}">${s.symbol} ${s.modifier > 0 ? '+' : ''}${s.modifier}｜${s.meaning}</span>`).join('');
+    inner = r.detectedSymbols.length
+      ? `検出シンボル ${r.allDetectedCount}個（スコア反映は上位${r.detectedSymbols.length}個）<br>${syms}`
+      : 'シンボルは検出されませんでした。もう少し具体的に書くと検出されやすくなります。';
+  }
+  return `<div class="detail-title">${iconOf(r.category)} ${r.label} — ${r.totalScore}点</div><div class="detail-body">${inner}</div>`;
+}
+
+// シェア・コピー
+$('copyBtn').addEventListener('click', async () => {
+  try {
+    await navigator.clipboard.writeText(lastShareText + '\n' + FULL_VERSION_URL);
+    $('copyBtn').textContent = '✅ コピーしました';
+    setTimeout(() => { $('copyBtn').textContent = '📋 結果をコピー'; }, 2000);
+  } catch (e) {
+    alert(lastShareText);
+  }
+});
+
+$('fullLink').href = FULL_VERSION_URL;
+</script>
+</body>
+</html>
